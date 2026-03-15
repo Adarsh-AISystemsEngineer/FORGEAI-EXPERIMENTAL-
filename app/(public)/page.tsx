@@ -24,11 +24,14 @@ export default function Home() {
           <a href="#about" className="hover:text-orange-500 transition-colors">
             About
           </a>
-          <a href="/login" className="hover:text-orange-500 transition-colors">
+          <a
+            href="/login-page"
+            className="hover:text-orange-500 transition-colors"
+          >
             Login
           </a>
           <a
-            href="/signup"
+            href="/signup-page"
             className="bg-orange-500 text-black px-4 py-2 rounded hover:bg-orange-400 transition-colors font-bold"
           >
             Sign Up

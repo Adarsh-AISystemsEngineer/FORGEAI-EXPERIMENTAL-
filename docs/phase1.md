@@ -328,3 +328,322 @@ Mobile      →  Flutter (Phase 3)
 ```
 
 ---
+
+---
+
+Perfect order. That's exactly how a systems thinker approaches it.
+
+```
+Platform Shell     → The store front
+Container Runtime  → The engine room
+Tools              → The products
+Download + Test    → The delivery
+```
+
+---
+
+### Let's Start With SDLC Phase 2 — System Design
+
+Before writing a single component, we design everything on paper first. No surprises later.
+
+---
+
+## SDLC PHASE 2 — SYSTEM DESIGN
+
+### 2.1 — Pages & Component Tree
+
+```
+App/
+├── (public)/
+│   ├── page.tsx              → Landing
+│   ├── login/page.tsx        → Login
+│   └── signup/page.tsx       → Signup
+│
+├── (authenticated)/
+│   ├── home/page.tsx         → Main tool discovery
+│   ├── tool/[id]/page.tsx    → Tool detail
+│   ├── profile/page.tsx      → User profile
+│   └── settings/page.tsx     → Settings
+│
+└── (developer)/
+    ├── dashboard/page.tsx    → Dev home
+    ├── upload/page.tsx       → Upload tool
+    ├── tools/page.tsx        → Manage tools
+    └── earnings/page.tsx     → Revenue
+```
+
+---
+
+### 2.2 — Database Schema
+
+```
+USERS
+─────────────────────────────
+id            UUID  PK
+email         STRING UNIQUE
+password      STRING (hashed)
+username      STRING UNIQUE
+role          ENUM (user, developer, admin)
+avatar        STRING (url)
+created_at    TIMESTAMP
+
+TOOLS
+─────────────────────────────
+id            UUID  PK
+name          STRING
+description   TEXT
+developer_id  UUID  FK → USERS
+category      ENUM (IoT, Gaming, Language...)
+platform      ENUM (Android, Desktop, Web...)
+price         DECIMAL (0 = free)
+version       STRING
+downloads     INTEGER
+rating        DECIMAL
+manifest      JSON
+status        ENUM (pending, approved, rejected)
+created_at    TIMESTAMP
+
+REVIEWS
+─────────────────────────────
+id            UUID  PK
+tool_id       UUID  FK → TOOLS
+user_id       UUID  FK → USERS
+rating        INTEGER (1-5)
+comment       TEXT
+created_at    TIMESTAMP
+
+DOWNLOADS
+─────────────────────────────
+id            UUID  PK
+tool_id       UUID  FK → TOOLS
+user_id       UUID  FK → USERS
+downloaded_at TIMESTAMP
+
+TRANSACTIONS
+─────────────────────────────
+id            UUID  PK
+tool_id       UUID  FK → TOOLS
+buyer_id      UUID  FK → USERS
+amount        DECIMAL
+platform_fee  DECIMAL (20%)
+developer_cut DECIMAL (80%)
+status        ENUM (pending, complete, failed)
+created_at    TIMESTAMP
+```
+
+---
+
+### 2.3 — API Endpoints
+
+```
+AUTH
+─────────────────────────────
+POST  /auth/signup
+POST  /auth/login
+POST  /auth/logout
+POST  /auth/reset-password
+
+TOOLS
+─────────────────────────────
+GET   /tools              → list all tools
+GET   /tools/:id          → single tool detail
+GET   /tools/search?q=    → search tools
+GET   /tools/filter?cat=  → filter by category
+POST  /tools              → upload tool (dev only)
+PUT   /tools/:id          → update tool (dev only)
+DELETE /tools/:id         → delete tool (dev only)
+
+REVIEWS
+─────────────────────────────
+GET   /tools/:id/reviews  → get reviews
+POST  /tools/:id/reviews  → post review
+DELETE /reviews/:id       → delete review
+
+DOWNLOADS
+─────────────────────────────
+POST  /tools/:id/download → download tool
+GET   /user/downloads     → user download history
+
+DEVELOPER
+─────────────────────────────
+GET   /developer/tools    → my tools
+GET   /developer/analytics → usage stats
+GET   /developer/earnings  → revenue data
+
+SANDBOX (Phase 3)
+─────────────────────────────
+POST  /sandbox/run        → execute tool
+GET   /sandbox/status/:id → execution status
+POST  /sandbox/stop/:id   → kill execution
+```
+
+---
+
+### 2.4 — Container Architecture
+
+```
+┌─────────────────────────────────────────┐
+│           FORGEAI PLATFORM              │
+│                                         │
+│  ┌──────────┐      ┌──────────────┐    │
+│  │ Next.js  │ ←──→ │   FastAPI    │    │
+│  │ Frontend │      │   Backend    │    │
+│  └──────────┘      └──────┬───────┘    │
+│                           │            │
+│                    ┌──────▼───────┐    │
+│                    │  PostgreSQL  │    │
+│                    │   Database   │    │
+│                    └──────────────┘    │
+│                                         │
+│  ┌─────────────────────────────────┐   │
+│  │      TOOL EXECUTION LAYER       │   │
+│  │                                 │   │
+│  │  ┌──────────────────────────┐  │   │
+│  │  │    Docker Container      │  │   │
+│  │  │    ┌────────────────┐    │  │   │
+│  │  │    │   AI Tool      │    │  │   │
+│  │  │    │   (isolated)   │    │  │   │
+│  │  │    └────────────────┘    │  │   │
+│  │  │    CPU: 25% max          │  │   │
+│  │  │    RAM: 256MB max        │  │   │
+│  │  │    Network: declared     │  │   │
+│  │  │    Files: sandboxed      │  │   │
+│  │  └──────────────────────────┘  │   │
+│  └─────────────────────────────────┘   │
+└─────────────────────────────────────────┘
+```
+
+---
+
+### 2.5 — Tool Manifest Standard
+
+Every tool submitted must include this:
+
+```json
+{
+  "name": "tool-name",
+  "version": "1.0.0",
+  "author": "developer-id",
+  "description": "What this tool does",
+  "category": "IoT",
+  "platform": ["android", "linux", "web"],
+  "price": 0,
+  "ai_model": "what model it uses",
+  "permissions": {
+    "network": false,
+    "filesystem": false,
+    "microphone": false,
+    "camera": false,
+    "location": false,
+    "background": false
+  },
+  "sandbox": {
+    "max_memory_mb": 256,
+    "max_cpu_percent": 25,
+    "max_storage_mb": 100,
+    "network_whitelist": [],
+    "timeout_seconds": 30
+  },
+  "entry_point": "main.py",
+  "dependencies": [],
+  "open_source": true,
+  "repository": "https://github.com/..."
+}
+```
+
+---
+
+### 2.6 — Security Flow
+
+```
+Developer submits tool
+        ↓
+Manifest validation
+(all fields present?)
+        ↓
+Static code scan
+(malware, suspicious patterns)
+        ↓
+Sandbox test run
+(does it exceed declared permissions?)
+        ↓
+Manual review (you, Phase 1)
+        ↓
+Approved → listed on platform
+Rejected → developer notified with reason
+        ↓
+User downloads tool
+        ↓
+Tool runs in Docker container
+with ONLY declared permissions
+        ↓
+Runtime monitoring
+(flag any permission violations)
+        ↓
+User can kill tool anytime
+```
+
+---
+
+### 2.7 — Frontend Component Design
+
+```
+Shared Components
+─────────────────────────────
+<Navbar />
+<Footer />
+<ToolCard />
+<SearchBar />
+<FilterPanel />
+<StarRating />
+<Button />
+<Modal />
+<Badge />
+<Avatar />
+
+Page Specific
+─────────────────────────────
+<HeroSection />        → landing
+<CategoryGrid />       → landing + home
+<ToolGrid />           → home
+<ToolDetail />         → tool page
+<ReviewSection />      → tool page
+<DeveloperCard />      → tool page
+<UploadForm />         → developer upload
+<AnalyticsDashboard /> → developer dashboard
+<EarningsChart />      → developer earnings
+```
+
+---
+
+### Build Order — Phase 2 Implementation
+
+```
+Week 1  → Database schema (PostgreSQL setup)
+Week 2  → Auth API (FastAPI signup/login)
+Week 3  → Frontend auth pages (login/signup)
+Week 4  → Tool registry API (CRUD)
+Week 5  → Home page + tool cards
+Week 6  → Tool detail page
+Week 7  → Developer upload flow
+Week 8  → Container sandbox (Docker basic)
+```
+
+---
+
+### Right Now — What To Build First
+
+The fastest path to something real and working:
+
+```
+TODAY →
+  1. Set up PostgreSQL database
+  2. Connect FastAPI to database
+  3. Build auth endpoints
+  4. Build login/signup pages
+  5. Connect frontend to backend
+```
+
+---
+
+Which do you want to tackle first — **database setup** or **finishing the landing page UI** so the platform looks real before we wire up the backend?
