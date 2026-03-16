@@ -24,14 +24,11 @@ export default function Home() {
           <a href="#about" className="hover:text-orange-500 transition-colors">
             About
           </a>
-          <a
-            href="/login-page"
-            className="hover:text-orange-500 transition-colors"
-          >
+          <a href="/login" className="hover:text-orange-500 transition-colors">
             Login
           </a>
           <a
-            href="/signup-page"
+            href="/signup"
             className="bg-orange-500 text-black px-4 py-2 rounded hover:bg-orange-400 transition-colors font-bold"
           >
             Sign Up
@@ -184,7 +181,7 @@ export default function Home() {
             factories.
           </p>
           <p className="text-white font-bold">ForgeAI does the same with AI.</p>
-          <p>Built by the community. Free for everyone. Forever.</p>
+          <p>Built by the people. For the people. Forever.</p>
         </div>
       </section>
 
