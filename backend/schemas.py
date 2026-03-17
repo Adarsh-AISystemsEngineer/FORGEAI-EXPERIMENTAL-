@@ -38,3 +38,15 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     user: UserResponse
+
+
+class OTPRequest(BaseModel):
+    email: EmailStr
+
+class OTPVerify(BaseModel):
+    email: EmailStr
+    otp: str
+
+class PasswordReset(BaseModel):
+    email: EmailStr
+    new_password: str

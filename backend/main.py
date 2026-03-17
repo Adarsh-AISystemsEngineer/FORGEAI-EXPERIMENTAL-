@@ -6,6 +6,8 @@ from models import User
 from schemas import UserCreate, UserLogin, Token, UserResponse
 from auth import signup_user, login_user, get_current_user
 from dotenv import load_dotenv
+from schemas import OTPRequest, OTPVerify, PasswordReset
+from auth import send_otp, verify_otp, reset_password
 
 load_dotenv()
 
@@ -67,3 +69,15 @@ def debug():
         "secret_key_set": bool(os.getenv("SECRET_KEY")),
         "supabase_url_set": bool(os.getenv("SUPABASE_URL")),
     }
+
+@app.post("/auth/forgot-password")
+def forgot_password(data: OTPRequest, db: Session = Depends(get_db)):
+    return send_otp(data.email, db)
+
+@app.post("/auth/verify-otp")
+def verify_otp_route(data: OTPVerify):
+    return verify_otp(data.email, data.otp)
+
+@app.post("/auth/reset-password")
+def reset_password_route(data: PasswordReset, db: Session = Depends(get_db)):
+    return reset_password(data.email, data.new_password, db)

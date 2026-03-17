@@ -1,11 +1,14 @@
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException, status
+import bcrypt as bcrypt_lib
 from fastapi.security import OAuth2PasswordBearer
 from dotenv import load_dotenv
+import resend
+import random
+import time
 import os
 
 from database import get_db
@@ -20,15 +23,20 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 # ── Password Hashing ──────────────────────
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 # ── Password Utils ────────────────────────
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    pwd_bytes = password.encode('utf-8')
+    salt = bcrypt_lib.gensalt()
+    return bcrypt_lib.hashpw(pwd_bytes, salt).decode('utf-8')
+
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    pwd_bytes = plain.encode('utf-8')
+    hashed_bytes = hashed.encode('utf-8')
+    return bcrypt_lib.checkpw(pwd_bytes, hashed_bytes)
 
 # ── JWT Token ─────────────────────────────
 def create_token(data: dict, expires_delta: Optional[timedelta] = None):
@@ -125,3 +133,84 @@ def get_current_user(
         raise credentials_exception
 
     return user
+
+# Temporary OTP store {email: {otp, expires_at}}
+otp_store = {}
+
+# ── Send OTP ──────────────────────────────
+def send_otp(email: str, db: Session):
+    # Check if user exists
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="No account found with this email"
+        )
+
+    # Generate 6 digit OTP
+    otp = str(random.randint(100000, 999999))
+    
+    # Store OTP with 10 minute expiry
+    otp_store[email] = {
+        "otp": otp,
+        "expires_at": time.time() + 600
+    }
+
+    # Send email via Resend
+    resend.api_key = os.getenv("RESEND_API_KEY")
+    resend.Emails.send({
+        "from": "forgeai@yourdomain.com",
+        "to": email,
+        "subject": "forgeai — Your OTP Code",
+        "html": f"""
+            <div style="background:#000;color:#fff;padding:40px;font-family:monospace;">
+                <h2 style="color:#E85D04;">⚒️ FORGEAI</h2>
+                <p>Your OTP code is:</p>
+                <h1 style="color:#E85D04;font-size:48px;letter-spacing:8px;">{otp}</h1>
+                <p style="color:#666;">Expires in 10 minutes.</p>
+                <p style="color:#666;">If you didn't request this, ignore this email.</p>
+            </div>
+        """
+    })
+
+    return {"message": "OTP sent to your email"}
+
+# ── Verify OTP ────────────────────────────
+def verify_otp(email: str, otp: str):
+    if email not in otp_store:
+        raise HTTPException(status_code=400, detail="OTP not found. Request a new one")
+
+    stored = otp_store[email]
+
+    if time.time() > stored["expires_at"]:
+        del otp_store[email]
+        raise HTTPException(status_code=400, detail="OTP expired. Request a new one")
+
+    if stored["otp"] != otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+
+    # Mark OTP as verified
+    otp_store[email]["verified"] = True
+
+    return {"message": "OTP verified"}
+
+# ── Reset Password ────────────────────────
+def reset_password(email: str, new_password: str, db: Session):
+    if email not in otp_store:
+        raise HTTPException(status_code=400, detail="Please verify OTP first")
+
+    if not otp_store[email].get("verified"):
+        raise HTTPException(status_code=400, detail="OTP not verified")
+
+    if len(new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+
+    # Update password
+    user = db.query(User).filter(User.email == email).first()
+    user.password = hash_password(new_password)
+    db.commit()
+
+    # Clear OTP
+    del otp_store[email]
+
+    return {"message": "Password reset successfully"}
