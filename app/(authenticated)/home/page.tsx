@@ -1,7 +1,10 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-// Temporary mock data until backend is ready
 const categories = [
   { icon: "🏠", label: "IoT & Smart Home", count: 0 },
   { icon: "🎮", label: "Gaming", count: 0 },
@@ -59,6 +62,38 @@ const mockTools = [
 ];
 
 export default function HomePage() {
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userData = localStorage.getItem("user");
+
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
+
+    setLoading(false);
+  }, [router]);
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-black text-white font-mono flex items-center justify-center">
+        <div className="text-center space-y-2">
+          <p className="text-orange-500 text-sm animate-pulse">
+            [FORGE] Authenticating...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-black text-white font-mono">
       {/* Navbar */}
@@ -66,7 +101,7 @@ export default function HomePage() {
         <Link href="/" className="flex items-center gap-3">
           <Image
             src="/logo.png"
-            alt="ForgeAI"
+            alt="forgeai"
             width={36}
             height={36}
             className="object-contain invert"
@@ -92,7 +127,7 @@ export default function HomePage() {
             href="/profile"
             className="text-gray-400 hover:text-orange-500 transition-colors"
           >
-            Profile
+            {user?.username || "Profile"}
           </Link>
           <Link
             href="/developer/dashboard"
@@ -101,7 +136,7 @@ export default function HomePage() {
             BECOME A DEV
           </Link>
           <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-black font-black text-sm">
-            U
+            {user?.username?.[0]?.toUpperCase() || "U"}
           </div>
         </div>
       </nav>
@@ -129,7 +164,6 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Platform Filter */}
           <p className="text-xs text-gray-500 uppercase tracking-widest mb-4 mt-8">
             Platform
           </p>
@@ -143,6 +177,18 @@ export default function HomePage() {
               </button>
             ))}
           </div>
+
+          {/* Logout */}
+          <button
+            onClick={() => {
+              localStorage.removeItem("token");
+              localStorage.removeItem("user");
+              router.push("/login");
+            }}
+            className="mt-auto text-xs text-gray-600 hover:text-red-400 transition-colors text-left px-3 py-2"
+          >
+            → Logout
+          </button>
         </aside>
 
         {/* Main Content */}
@@ -151,7 +197,7 @@ export default function HomePage() {
           <div className="bg-gray-950 border border-orange-500/30 rounded-xl p-6 mb-8 flex justify-between items-center">
             <div>
               <p className="text-xs text-orange-500 tracking-widest mb-1">
-                [FORGE] Welcome back
+                [FORGE] Welcome back, {user?.username}
               </p>
               <h1 className="text-2xl font-black">
                 What will you <span className="text-orange-500">forge</span>{" "}
@@ -164,7 +210,7 @@ export default function HomePage() {
             <div className="hidden md:block">
               <Image
                 src="/logo.png"
-                alt="ForgeAI"
+                alt="forgeai"
                 width={80}
                 height={80}
                 className="object-contain invert opacity-20"
@@ -172,7 +218,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Featured / New Tools */}
+          {/* Featured Tools */}
           <div className="mb-8">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-black">
@@ -189,7 +235,6 @@ export default function HomePage() {
                   key={tool.id}
                   className="border border-orange-500/20 rounded-xl p-5 hover:border-orange-500/60 hover:bg-orange-500/5 transition-all cursor-pointer group"
                 >
-                  {/* Badge */}
                   <div className="flex justify-between items-start mb-3">
                     <span className="text-xs bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded font-bold">
                       {tool.badge}
@@ -199,7 +244,6 @@ export default function HomePage() {
                     </span>
                   </div>
 
-                  {/* Tool Info */}
                   <h3 className="font-black text-lg mb-1 group-hover:text-orange-500 transition-colors">
                     {tool.name}
                   </h3>
@@ -207,7 +251,6 @@ export default function HomePage() {
                     {tool.description}
                   </p>
 
-                  {/* Platforms */}
                   <div className="flex gap-1 mb-4">
                     {tool.platform.map((p) => (
                       <span
@@ -219,7 +262,6 @@ export default function HomePage() {
                     ))}
                   </div>
 
-                  {/* Footer */}
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="text-xs text-gray-600">
@@ -241,7 +283,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* All Categories Grid */}
+          {/* Categories Grid */}
           <div>
             <h2 className="text-lg font-black mb-4">
               Browse by <span className="text-orange-500">Category</span>
@@ -267,7 +309,7 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="border-t border-orange-500/30 px-8 py-6 text-center text-sm text-gray-500 mt-8">
         <p>
-          ⚒️ <span className="text-orange-500 font-bold">ForgeAI</span> · A
+          ⚒️ <span className="text-orange-500 font-bold">forgeai</span> · A
           BlackRails Technology Project · AGPL v3
         </p>
       </footer>

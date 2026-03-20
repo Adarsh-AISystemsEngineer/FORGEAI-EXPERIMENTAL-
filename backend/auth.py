@@ -159,9 +159,9 @@ def send_otp(email: str, db: Session):
     # Send email via Resend
     resend.api_key = os.getenv("RESEND_API_KEY")
     resend.Emails.send({
-        "from": "forgeai@yourdomain.com",
-        "to": email,
-        "subject": "forgeai — Your OTP Code",
+    "from": "onboarding@resend.dev",
+    "to": "adarshsunilkumar1854@gmail.com",  # hardcode yours for testing
+    "subject": "forgeai — Your OTP Code",
         "html": f"""
             <div style="background:#000;color:#fff;padding:40px;font-family:monospace;">
                 <h2 style="color:#E85D04;">⚒️ FORGEAI</h2>
