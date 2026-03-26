@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from enum import Enum
 from uuid import UUID
+from typing import List
 from datetime import datetime
 from typing import Optional
 
@@ -50,3 +51,39 @@ class OTPVerify(BaseModel):
 class PasswordReset(BaseModel):
     email: EmailStr
     new_password: str
+
+
+
+# ── Tool Schemas ──────────────────────────
+
+class ToolCreate(BaseModel):
+    name: str
+    description: str
+    category: str
+    price: float = 0.0
+    is_free: bool = True
+    version: str = "1.0.0"
+    platforms: str = "web"
+
+class ToolResponse(BaseModel):
+    id: UUID
+    name: str
+    description: str
+    developer_id: UUID
+    developer_name: str
+    category: str
+    price: float
+    is_free: bool
+    downloads: int
+    rating: float
+    version: str
+    platforms: str
+    is_approved: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class ToolListResponse(BaseModel):
+    tools: List[ToolResponse]
+    total: int
