@@ -6,90 +6,64 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const categories = [
-  { icon: "🏠", label: "IoT & Smart Home", count: 0 },
-  { icon: "🎮", label: "Gaming", count: 0 },
-  { icon: "🌐", label: "Language & Voice", count: 0 },
-  { icon: "📁", label: "Productivity", count: 0 },
-  { icon: "🚁", label: "Drones", count: 0 },
-  { icon: "🎬", label: "Creative", count: 0 },
-  { icon: "📚", label: "Education", count: 0 },
-  { icon: "🤖", label: "Automation", count: 0 },
-];
-
-const mockTools = [
-  {
-    id: "1",
-    name: "WebForge",
-    description:
-      "AI web auditor — paste a URL, get a full report on issues, performance and fixes.",
-    category: "Developer",
-    platform: ["Web", "Linux"],
-    developer: "BlackRails",
-    rating: 5.0,
-    downloads: 0,
-    isFree: true,
-    price: 0,
-    badge: "NEW",
-  },
-  {
-    id: "2",
-    name: "Climate AI",
-    description:
-      "Smart IoT temperature control that learns your schedule and saves energy.",
-    category: "IoT & Smart Home",
-    platform: ["Android", "Linux"],
-    developer: "BlackRails",
-    rating: 0,
-    downloads: 0,
-    isFree: true,
-    price: 0,
-    badge: "COMING SOON",
-  },
-  {
-    id: "3",
-    name: "GameCoach",
-    description:
-      "Real-time AI gaming assistant. Analyzes gameplay and suggests improvements live.",
-    category: "Gaming",
-    platform: ["Android", "Desktop"],
-    developer: "BlackRails",
-    rating: 0,
-    downloads: 0,
-    isFree: true,
-    price: 0,
-    badge: "COMING SOON",
-  },
+  { icon: "🏠", label: "IoT & Smart Home", value: "iot" },
+  { icon: "🎮", label: "Gaming", value: "gaming" },
+  { icon: "🌐", label: "Language & Voice", value: "language" },
+  { icon: "📁", label: "Productivity", value: "productivity" },
+  { icon: "🚁", label: "Drones", value: "drones" },
+  { icon: "🎬", label: "Creative", value: "creative" },
+  { icon: "📚", label: "Education", value: "education" },
+  { icon: "🤖", label: "Automation", value: "automation" },
 ];
 
 export default function HomePage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [tools, setTools] = useState<any[]>([]);
+  const [toolsLoading, setToolsLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedPlatform, setSelectedPlatform] = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
-
     if (!token) {
       router.push("/login");
       return;
     }
-
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-
+    if (userData) setUser(JSON.parse(userData));
     setLoading(false);
   }, [router]);
+
+  useEffect(() => {
+    const fetchTools = async () => {
+      try {
+        const params = new URLSearchParams();
+        if (search) params.append("search", search);
+        if (selectedCategory) params.append("category", selectedCategory);
+        if (selectedPlatform) params.append("platform", selectedPlatform);
+        const response = await fetch(
+          `http://localhost:8000/tools?${params.toString()}`,
+        );
+        const data = await response.json();
+        setTools(data.tools);
+      } catch (err) {
+        console.error("Failed to fetch tools");
+      } finally {
+        setToolsLoading(false);
+      }
+    };
+    fetchTools();
+  }, [search, selectedCategory, selectedPlatform]);
 
   if (loading) {
     return (
       <main className="min-h-screen bg-black text-white font-mono flex items-center justify-center">
-        <div className="text-center space-y-2">
-          <p className="text-orange-500 text-sm animate-pulse">
-            [FORGE] Authenticating...
-          </p>
-        </div>
+        <p className="text-orange-500 text-sm animate-pulse">
+          [FORGE] Authenticating...
+        </p>
       </main>
     );
   }
@@ -111,17 +85,17 @@ export default function HomePage() {
           </span>
         </Link>
 
-        {/* Search Bar */}
         <div className="hidden md:flex items-center gap-2 bg-gray-950 border border-orange-500/30 rounded px-4 py-2 w-96 focus-within:border-orange-500 transition-colors">
           <span className="text-gray-500">🔍</span>
           <input
             type="text"
             placeholder="Search AI tools..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             className="bg-transparent text-white text-sm focus:outline-none w-full placeholder-gray-600"
           />
         </div>
 
-        {/* User Menu */}
         <div className="flex items-center gap-4 text-sm">
           <Link
             href="/profile"
@@ -148,18 +122,32 @@ export default function HomePage() {
             Categories
           </p>
           <div className="space-y-1">
-            <button className="w-full text-left px-3 py-2 rounded text-sm bg-orange-500/10 text-orange-500 border border-orange-500/30">
+            {/* ✅ Fixed — no cat.value outside map */}
+            <button
+              onClick={() => setSelectedCategory("")}
+              className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                selectedCategory === ""
+                  ? "bg-orange-500/10 text-orange-500 border border-orange-500/30"
+                  : "text-gray-400 hover:text-white hover:bg-orange-500/5"
+              }`}
+            >
               ⚡ All Tools
             </button>
+
+            {/* ✅ Fixed — using cat.value not string manipulation */}
             {categories.map((cat) => (
               <button
                 key={cat.label}
-                className="w-full text-left px-3 py-2 rounded text-sm text-gray-400 hover:text-white hover:bg-orange-500/5 transition-colors flex justify-between items-center"
+                onClick={() => setSelectedCategory(cat.value)}
+                className={`w-full text-left px-3 py-2 rounded text-sm transition-colors flex justify-between items-center ${
+                  selectedCategory === cat.value
+                    ? "bg-orange-500/10 text-orange-500 border border-orange-500/30"
+                    : "text-gray-400 hover:text-white hover:bg-orange-500/5"
+                }`}
               >
                 <span>
                   {cat.icon} {cat.label}
                 </span>
-                <span className="text-xs text-gray-600">{cat.count}</span>
               </button>
             ))}
           </div>
@@ -171,14 +159,20 @@ export default function HomePage() {
             {["All", "Android", "Desktop", "Web", "IoT", "Drones"].map((p) => (
               <button
                 key={p}
-                className="w-full text-left px-3 py-2 rounded text-sm text-gray-400 hover:text-white hover:bg-orange-500/5 transition-colors"
+                onClick={() =>
+                  setSelectedPlatform(p === "All" ? "" : p.toLowerCase())
+                }
+                className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                  selectedPlatform === (p === "All" ? "" : p.toLowerCase())
+                    ? "text-orange-500 bg-orange-500/10"
+                    : "text-gray-400 hover:text-white hover:bg-orange-500/5"
+                }`}
               >
                 {p}
               </button>
             ))}
           </div>
 
-          {/* Logout */}
           <button
             onClick={() => {
               localStorage.removeItem("token");
@@ -193,7 +187,6 @@ export default function HomePage() {
 
         {/* Main Content */}
         <div className="flex-1 px-6 py-8">
-          {/* Welcome Banner */}
           <div className="bg-gray-950 border border-orange-500/30 rounded-xl p-6 mb-8 flex justify-between items-center">
             <div>
               <p className="text-xs text-orange-500 tracking-widest mb-1">
@@ -218,69 +211,94 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Featured Tools */}
           <div className="mb-8">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-black">
-                🔥 <span className="text-orange-500">Featured</span> Tools
+                🔥{" "}
+                <span className="text-orange-500">
+                  {search
+                    ? `Results for "${search}"`
+                    : selectedCategory
+                      ? selectedCategory
+                      : "Featured"}
+                </span>{" "}
+                Tools
               </h2>
-              <button className="text-xs text-gray-500 hover:text-orange-500 transition-colors">
-                View all →
-              </button>
+              <span className="text-xs text-gray-500">
+                {tools.length} tool{tools.length !== 1 ? "s" : ""}
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mockTools.map((tool) => (
-                <div
-                  key={tool.id}
-                  className="border border-orange-500/20 rounded-xl p-5 hover:border-orange-500/60 hover:bg-orange-500/5 transition-all cursor-pointer group"
+            {toolsLoading ? (
+              <p className="text-gray-500 text-sm animate-pulse">
+                [FORGE] Loading tools...
+              </p>
+            ) : tools.length === 0 ? (
+              <div className="border border-orange-500/20 rounded-xl p-8 text-center">
+                <p className="text-gray-500 text-sm">
+                  No tools found. Be the first to build one.
+                </p>
+                <Link
+                  href="/developer/dashboard"
+                  className="text-orange-500 text-xs hover:underline mt-2 block"
                 >
-                  <div className="flex justify-between items-start mb-3">
-                    <span className="text-xs bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded font-bold">
-                      {tool.badge}
-                    </span>
-                    <span className="text-xs text-gray-600">
-                      {tool.category}
-                    </span>
-                  </div>
-
-                  <h3 className="font-black text-lg mb-1 group-hover:text-orange-500 transition-colors">
-                    {tool.name}
-                  </h3>
-                  <p className="text-gray-500 text-xs leading-relaxed mb-4">
-                    {tool.description}
-                  </p>
-
-                  <div className="flex gap-1 mb-4">
-                    {tool.platform.map((p) => (
-                      <span
-                        key={p}
-                        className="text-xs border border-orange-500/20 text-gray-500 px-2 py-0.5 rounded"
-                      >
-                        {p}
+                  → Become a developer
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {tools.map((tool) => (
+                  <div
+                    key={tool.id}
+                    className="border border-orange-500/20 rounded-xl p-5 hover:border-orange-500/60 hover:bg-orange-500/5 transition-all cursor-pointer group"
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <span className="text-xs bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded font-bold">
+                        {tool.is_free ? "FREE" : `$${tool.price}`}
                       </span>
-                    ))}
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-xs text-gray-600">
-                        by{" "}
-                        <span className="text-orange-500">
-                          {tool.developer}
-                        </span>
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        {tool.downloads} downloads
-                      </p>
+                      <span className="text-xs text-gray-600">
+                        {tool.category}
+                      </span>
                     </div>
-                    <button className="bg-orange-500 text-black text-xs font-black px-4 py-2 rounded hover:bg-orange-400 transition-colors">
-                      {tool.isFree ? "FREE →" : `$${tool.price}`}
-                    </button>
+
+                    <h3 className="font-black text-lg mb-1 group-hover:text-orange-500 transition-colors">
+                      {tool.name}
+                    </h3>
+                    <p className="text-gray-500 text-xs leading-relaxed mb-4">
+                      {tool.description}
+                    </p>
+
+                    <div className="flex gap-1 mb-4 flex-wrap">
+                      {tool.platforms.split(",").map((p: string) => (
+                        <span
+                          key={p}
+                          className="text-xs border border-orange-500/20 text-gray-500 px-2 py-0.5 rounded"
+                        >
+                          {p.trim()}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-xs text-gray-600">
+                          by{" "}
+                          <span className="text-orange-500">
+                            {tool.developer_name}
+                          </span>
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          {tool.downloads} downloads
+                        </p>
+                      </div>
+                      <button className="bg-orange-500 text-black text-xs font-black px-4 py-2 rounded hover:bg-orange-400 transition-colors">
+                        {tool.is_free ? "FREE →" : `$${tool.price}`}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Categories Grid */}
@@ -289,16 +307,19 @@ export default function HomePage() {
               Browse by <span className="text-orange-500">Category</span>
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {/* ✅ Fixed — using cat.value */}
               {categories.map((cat) => (
                 <div
                   key={cat.label}
-                  className="border border-orange-500/20 rounded-xl p-4 text-center hover:border-orange-500 hover:bg-orange-500/5 transition-all cursor-pointer"
+                  onClick={() => setSelectedCategory(cat.value)}
+                  className={`border rounded-xl p-4 text-center transition-all cursor-pointer ${
+                    selectedCategory === cat.value
+                      ? "border-orange-500 bg-orange-500/10"
+                      : "border-orange-500/20 hover:border-orange-500 hover:bg-orange-500/5"
+                  }`}
                 >
                   <div className="text-2xl mb-2">{cat.icon}</div>
                   <p className="text-xs text-gray-400">{cat.label}</p>
-                  <p className="text-xs text-gray-600 mt-1">
-                    {cat.count} tools
-                  </p>
                 </div>
               ))}
             </div>
@@ -306,7 +327,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Footer */}
       <footer className="border-t border-orange-500/30 px-8 py-6 text-center text-sm text-gray-500 mt-8">
         <p>
           ⚒️ <span className="text-orange-500 font-bold">forgeai</span> · A
