@@ -199,3 +199,63 @@ def delete_tool(
     db.delete(tool)
     db.commit()
     return {"message": "Tool deleted"}
+
+
+# ── Developer Routes ──────────────────────
+
+@app.patch("/auth/become-developer", response_model=Token)
+def become_developer_route(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from auth import become_developer
+    return become_developer(current_user, db)
+
+
+@app.get("/developer/tools")
+def get_my_tools(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current_user.role not in ["developer", "admin"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Developer access required"
+        )
+
+    tools = db.query(Tool).filter(
+        Tool.developer_id == current_user.id
+    ).all()
+
+    return {"tools": tools, "total": len(tools)}
+
+
+@app.get("/developer/stats")
+def get_developer_stats(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current_user.role not in ["developer", "admin"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Developer access required"
+        )
+
+    tools = db.query(Tool).filter(
+        Tool.developer_id == current_user.id
+    ).all()
+
+    total_downloads = sum(t.downloads for t in tools)
+    total_tools = len(tools)
+    approved_tools = len([t for t in tools if t.is_approved])
+    pending_tools = len([t for t in tools if not t.is_approved])
+
+    return {
+        "total_tools": total_tools,
+        "approved_tools": approved_tools,
+        "pending_tools": pending_tools,
+        "total_downloads": total_downloads,
+    }
+
+
+
