@@ -214,3 +214,34 @@ def reset_password(email: str, new_password: str, db: Session):
     del otp_store[email]
 
     return {"message": "Password reset successfully"}
+
+
+# ── Become Developer ──────────────────────
+def become_developer(current_user: User, db: Session):
+    if current_user.role == "developer":
+        raise HTTPException(
+            status_code=400,
+            detail="You are already a developer"
+        )
+
+    if current_user.role == "admin":
+        raise HTTPException(
+            status_code=400,
+            detail="Admins cannot change role"
+        )
+
+    current_user.role = "developer"
+    db.commit()
+    db.refresh(current_user)
+
+    # Create new token with updated role
+    token = create_token({
+        "sub": str(current_user.id),
+        "role": current_user.role
+    })
+
+    return Token(
+        access_token=token,
+        token_type="bearer",
+        user=UserResponse.from_orm(current_user)
+    )
