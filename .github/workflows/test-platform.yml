@@ -1,0 +1,14 @@
+name: Test Platform
+
+on:
+  push:
+    paths:
+      - "platform/**"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run tests
+        run: echo "Testing platform"

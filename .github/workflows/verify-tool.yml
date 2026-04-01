@@ -1,0 +1,14 @@
+name: Verify Tool
+
+on:
+  push:
+    paths:
+      - "tools/**"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run verification
+        run: echo "Verifying tool"

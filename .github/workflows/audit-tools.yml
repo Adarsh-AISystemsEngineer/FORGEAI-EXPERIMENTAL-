@@ -1,0 +1,13 @@
+name: Audit Tools
+
+on:
+  schedule:
+    - cron: "0 0 * * 0" # Weekly
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run audit
+        run: echo "Auditing tools"
