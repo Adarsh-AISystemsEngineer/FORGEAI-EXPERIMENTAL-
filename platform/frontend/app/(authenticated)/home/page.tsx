@@ -104,7 +104,7 @@ export default function HomePage() {
             {user?.username || "Profile"}
           </Link>
           <Link
-            href="/developer/dashboard"
+            href="/developer"
             className="border border-orange-500 text-orange-500 px-3 py-1.5 rounded hover:bg-orange-500 hover:text-black transition-colors font-bold text-xs"
           >
             BECOME A DEV

@@ -1,0 +1,15 @@
+{
+  "name": "textforge",
+  "version": "0.1.0",
+  "description": "A text summarization tool .",
+  "permissions": [],
+  "sandbox": {
+    "network": false,
+    "filesystem": false,
+    "microphone": false,
+    "camera": false,
+    "background": false,
+    "max_memory_mb": 256,
+    "max_cpu_percent": 25
+  }
+}

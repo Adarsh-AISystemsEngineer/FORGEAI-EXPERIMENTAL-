@@ -1,6 +1,0 @@
-{
-  "/(authenticated)/home/page": "app/(authenticated)/home/page.js",
-  "/(public)/login/page": "app/(public)/login/page.js",
-  "/(public)/page": "app/(public)/page.js",
-  "/(public)/signup/page": "app/(public)/signup/page.js"
-}
