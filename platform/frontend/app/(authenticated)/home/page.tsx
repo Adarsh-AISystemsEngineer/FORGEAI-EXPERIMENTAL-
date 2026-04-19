@@ -248,9 +248,10 @@ export default function HomePage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {tools.map((tool) => (
-                  <div
+                  <Link
                     key={tool.id}
-                    className="border border-orange-500/20 rounded-xl p-5 hover:border-orange-500/60 hover:bg-orange-500/5 transition-all cursor-pointer group"
+                    href={`/tool/${tool.id}`}
+                    className="border border-orange-500/20 rounded-xl p-5 hover:border-orange-500/60 hover:bg-orange-500/5 transition-all cursor-pointer group block"
                   >
                     <div className="flex justify-between items-start mb-3">
                       <span className="text-xs bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded font-bold">
@@ -295,7 +296,7 @@ export default function HomePage() {
                         {tool.is_free ? "FREE →" : `$${tool.price}`}
                       </button>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
